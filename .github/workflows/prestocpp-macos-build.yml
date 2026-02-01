@@ -74,6 +74,10 @@ jobs:
           # First selectively install the minimal dependencies for Velox.
           install_build_prerequisites
           install_velox_deps_from_brew
+          # Workaround because the gh runner installed libevent
+          # isn't linked.
+          brew unlink libevent && brew link libevent
+          ls -ltr /opt/homebrew/include/event.h
           install_double_conversion
 
           # Install glog/gflags because they are not installed from homebrew.

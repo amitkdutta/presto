@@ -16,6 +16,7 @@ find_library(THRIFT_CORE thrift-core)
 find_library(THRIFT_PROTOCOL thriftprotocol)
 find_library(THRIFT_METADATA thriftmetadata)
 find_library(THRIFT_TRANSPORT transport)
+find_library(THRIFT_TYPEREP thrifttyperep)
 find_path(THRIFT_INCLUDES thrift/lib/cpp2/gen/module_data_h.h PATH_SUFFIXES include REQUIRED)
 
 include(ThriftLibrary.cmake)
@@ -35,10 +36,18 @@ target_link_libraries(
   ${THRIFT_METADATA}
   ${THRIFT_CORE}
   ${THRIFT_TRANSPORT}
+  ${THRIFT_TYPEREP}
+  ${FOLLY_WITH_DEPENDENCIES}
 )
 set(presto_thrift_INCLUDES ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(presto_thrift-cpp2 PUBLIC ${presto_thrift_INCLUDES} ${GLOG_INCLUDE_DIR})
 target_include_directories(presto_thrift-cpp2-obj PUBLIC ${THRIFT_INCLUDES} ${GLOG_INCLUDE_DIR})
+
+message(STATUS "Dumping the presto_thrift-cpp2 source files:")
+get_target_property(source_files presto_thrift-cpp2 SOURCE_FILES)
+foreach(file ${source_files})
+  message(STATUS "Thrift source file: ${file}")
+endforeach()
 
 thrift_library(
   presto_native
@@ -55,10 +64,18 @@ target_link_libraries(
   ${THRIFT_METADATA}
   ${THRIFT_CORE}
   ${THRIFT_TRANSPORT}
+  ${THRIFT_TYPEREP}
+  ${FOLLY_WITH_DEPENDENCIES}
 )
 set(presto_native_INCLUDES ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(presto_native-cpp2 PUBLIC ${presto_native_INCLUDES} ${GLOG_INCLUDE_DIR})
 target_include_directories(presto_native-cpp2-obj PUBLIC ${THRIFT_INCLUDES} ${GLOG_INCLUDE_DIR})
+
+message(STATUS "Dumping the presto_native-cpp2 source files:")
+get_target_property(source_files presto_native-cpp2 SOURCE_FILES)
+foreach(file ${source_files})
+  message(STATUS "Thrift source file: ${file}")
+endforeach()
 
 add_library(presto_thrift_extra ProtocolToThrift.cpp)
 target_include_directories(
