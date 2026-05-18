@@ -37,7 +37,7 @@ jobs:
       CMAKE_POLICY_VERSION_MINIMUM: "3.5"
       HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: "TRUE"
       # The arm runners (macos-14 and later) have only 7GB RAM.
-      BUILD_TYPE: "${{ matrix.os ==  'macos-15' && 'Release' || 'Debug' }}"
+      BUILD_TYPE: "${{ matrix.os ==  'macos-15' && 'release' || 'debug' }}"
       INSTALL_PREFIX: /tmp/deps-install
     concurrency:
       group: ${{ github.workflow }}-prestocpp-macos-build-${{ github.event.pull_request.number }}-${{ matrix.os }}
@@ -69,7 +69,7 @@ jobs:
         run: |
           set -xu
           source presto-native-execution/scripts/setup-macos.sh
-          export PROMPT_ALWAYS_RESPOND=n
+          export PROMPT_ALWAYS_RESPOND=y
 
           # First selectively install the minimal dependencies for Velox.
           install_build_prerequisites
@@ -79,6 +79,9 @@ jobs:
           # Install glog/gflags because they are not installed from homebrew.
           install_gflags
           install_glog
+
+          # Install protobuf because it is not installed from homebrew.
+          install_protobuf
 
           # Velox deps needed by proxygen, a presto dependency.
           install_boost
@@ -96,8 +99,7 @@ jobs:
           # Now install the presto dependencies.
           install_presto_deps
 
-          echo "NJOBS=`sysctl -n hw.ncpu`" >> $GITHUB_ENV
-          brew link --force protobuf@21
+          echo "NUM_THREADS=`sysctl -n hw.ncpu`" >> $GITHUB_ENV
 
       - name: Install Github CLI for using apache/infrastructure-actions/stash
         if: |
@@ -125,11 +127,7 @@ jobs:
           export PATH=$(brew --prefix m4)/bin:$(brew --prefix bison)/bin:${PATH}
           export BOOST_ROOT=${INSTALL_PREFIX}
           cd presto-native-execution
-          cmake -B _build/${BUILD_TYPE} \
-            -GNinja -DTREAT_WARNINGS_AS_ERRORS=1 \
-            -DENABLE_ALL_WARNINGS=1 \
-            -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
-          ninja -C _build/${BUILD_TYPE} -j ${NJOBS}
+          make ${BUILD_TYPE}
 
       - name: Ccache after
         if: |
