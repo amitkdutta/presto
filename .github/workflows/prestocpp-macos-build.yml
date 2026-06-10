@@ -92,6 +92,10 @@ jobs:
           install_wangle
           install_mvfst
 
+          # FileUtils.h pulls Buffer.h without declaring the dependency leading
+          # to a missing xsimd header if bundled.
+          install_xsimd
+
           # Velox dependencies that Presto directly depends on.
           install_re2
           install_fbthrift
