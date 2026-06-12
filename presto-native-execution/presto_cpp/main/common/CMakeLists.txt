@@ -11,7 +11,14 @@
 # limitations under the License.
 
 add_library(presto_exception Exception.cpp)
-add_library(presto_common Counters.cpp Utils.cpp ConfigReader.cpp Configs.cpp)
+add_library(
+  presto_common
+  Counters.cpp
+  Utils.cpp
+  ConfigReader.cpp
+  Configs.cpp
+  LegacyHiveConfigKeys.cpp
+)
 
 target_link_libraries(presto_exception velox_exception)
 set_property(TARGET presto_exception PROPERTY JOB_POOL_LINK presto_link_job_pool)

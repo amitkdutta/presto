@@ -14,6 +14,7 @@
 
 #include "presto_cpp/main/PrestoToVeloxQueryConfig.h"
 #include "presto_cpp/main/common/Configs.h"
+#include "presto_cpp/main/common/LegacyHiveConfigKeys.h"
 #include "presto_cpp/main/properties/session/SessionProperties.h"
 #include "velox/common/compression/Compression.h"
 #include "velox/core/QueryConfig.h"
@@ -296,6 +297,7 @@ toConnectorConfigs(const protocol::TaskUpdateRequest& taskUpdateRequest) {
           : sessionProperty.first;
       connectorConfig.emplace(veloxConfig, sessionProperty.second);
     }
+    util::migrateLegacyHiveParquetSessionKeys(connectorConfig);
     connectorConfig.insert(
         taskUpdateRequest.extraCredentials.begin(),
         taskUpdateRequest.extraCredentials.end());

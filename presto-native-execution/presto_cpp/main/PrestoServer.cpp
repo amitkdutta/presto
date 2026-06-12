@@ -27,6 +27,7 @@
 #include "presto_cpp/main/TaskResource.h"
 #include "presto_cpp/main/common/ConfigReader.h"
 #include "presto_cpp/main/common/Counters.h"
+#include "presto_cpp/main/common/LegacyHiveConfigKeys.h"
 #include "presto_cpp/main/common/Utils.h"
 #include "presto_cpp/main/connectors/Registration.h"
 #include "presto_cpp/main/connectors/SystemConnector.h"
@@ -1428,6 +1429,11 @@ std::vector<std::string> PrestoServer::registerVeloxConnectors(
           fileName.substr(0, fileName.size() - kPropertiesExtension.size());
 
       auto connectorConf = util::readConfig(entry.path());
+      auto connectorName =
+          util::requiredProperty(connectorConf, kConnectorName);
+
+      util::migrateLegacyHiveParquetKeys(connectorName, connectorConf);
+
       PRESTO_STARTUP_LOG(INFO)
           << "Registered catalog property keys from " << entry.path() << ":\n"
           << logConnectorConfigPropertyKeys(connectorConf);
@@ -1435,8 +1441,6 @@ std::vector<std::string> PrestoServer::registerVeloxConnectors(
       std::shared_ptr<const velox::config::ConfigBase> properties =
           std::make_shared<const velox::config::ConfigBase>(
               std::move(connectorConf));
-
-      auto connectorName = util::requiredProperty(*properties, kConnectorName);
 
       catalogNames.emplace_back(catalogName);
 
