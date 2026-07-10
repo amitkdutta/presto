@@ -73,7 +73,7 @@
 #include "velox/dwio/parquet/RegisterParquetWriter.h"
 #include "velox/dwio/text/RegisterTextReader.h"
 #include "velox/dwio/text/RegisterTextWriter.h"
-#include "velox/exec/OutputBufferManager.h"
+#include "velox/exec/DefaultOutputBufferManager.h"
 #include "velox/exec/TraceUtil.h"
 #include "velox/exec/rpc/RPCPlanNodeTranslator.h"
 #include "velox/expression/rpc/AsyncRPCFunctionRegistry.h"
@@ -133,10 +133,11 @@ protocol::NodeState convertNodeState(presto::NodeState nodeState) {
 }
 
 void enableChecksum() {
-  velox::exec::OutputBufferManager::getInstanceRef()->setListenerFactory([]() {
-    return std::make_unique<
-        velox::serializer::presto::PrestoOutputStreamListener>();
-  });
+  velox::exec::DefaultOutputBufferManager::getInstanceRef()->setListenerFactory(
+      []() {
+        return std::make_unique<
+            velox::serializer::presto::PrestoOutputStreamListener>();
+      });
 }
 
 // Log only the catalog keys that are configured to avoid leaking

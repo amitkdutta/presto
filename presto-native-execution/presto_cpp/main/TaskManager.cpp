@@ -147,7 +147,7 @@ void getData(
     long destination,
     long token,
     protocol::DataSize maxSize,
-    exec::OutputBufferManager& bufferManager) {
+    exec::DefaultOutputBufferManager& bufferManager) {
   if (promiseHolder == nullptr) {
     // promise/future is expired.
     return;
@@ -365,7 +365,7 @@ TaskManager::TaskManager(
           std::make_unique<QueryContextManager>(
               driverExecutor,
               spillerExecutor)),
-      bufferManager_(velox::exec::OutputBufferManager::getInstanceRef()),
+      bufferManager_(velox::exec::DefaultOutputBufferManager::getInstanceRef()),
       httpSrvCpuExecutor_(httpSrvCpuExecutor),
       lastNotOverloadedTimeInSecs_(velox::getCurrentTimeSec()) {
   VELOX_CHECK_NOT_NULL(bufferManager_, "invalid OutputBufferManager");
