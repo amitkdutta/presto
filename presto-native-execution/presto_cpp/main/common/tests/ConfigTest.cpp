@@ -15,9 +15,14 @@
 #include <filesystem>
 #include <unordered_set>
 
+#include <folly/portability/GFlags.h>
 #include <folly/system/HardwareConcurrency.h>
-#include <gflags/gflags.h>
 #include <gtest/gtest.h>
+#include <cstdint>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 #include "presto_cpp/main/common/ConfigReader.h"
 #include "presto_cpp/main/common/Configs.h"
@@ -426,6 +431,8 @@ DECLARE_bool(avx2);
 
 namespace facebook::presto::test {
 
+// Saves and restores the gflags touched by applyGFlags() so tests do not leak
+// flag state to one another.
 class GFlagConfigTest : public ConfigTest {
  protected:
   void SetUp() override {
@@ -444,10 +451,11 @@ class GFlagConfigTest : public ConfigTest {
   }
 
  private:
-  void saveFlagState(const char* name) {
+  void saveFlagState(std::string_view name) {
     gflags::CommandLineFlagInfo info;
-    if (gflags::GetCommandLineFlagInfo(name, &info)) {
-      savedFlags_.emplace_back(name, info.current_value);
+    const std::string nameStr{name};
+    if (gflags::GetCommandLineFlagInfo(nameStr.c_str(), &info)) {
+      savedFlags_.emplace_back(nameStr, info.current_value);
     }
   }
 
@@ -466,7 +474,7 @@ TEST_F(GFlagConfigTest, applyGFlags) {
 }
 
 TEST_F(GFlagConfigTest, applyGFlagsIgnoresNonGflagKeys) {
-  auto origPools = FLAGS_velox_memory_num_shared_leaf_pools;
+  const int32_t origPools = FLAGS_velox_memory_num_shared_leaf_pools;
 
   applyGFlags({{"velox-memory-num-shared-leaf-pools", "99"}});
 

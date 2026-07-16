@@ -12,8 +12,7 @@
  * limitations under the License.
  */
 #include <folly/init/Init.h>
-#include <gflags/gflags.h>
-#include <gflags/gflags_declare.h>
+#include <folly/portability/GFlags.h>
 #include <glog/logging.h>
 #include "presto_cpp/main/PrestoServer.h"
 #include "presto_cpp/main/common/ConfigReader.h"

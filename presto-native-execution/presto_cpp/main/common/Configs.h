@@ -1398,6 +1398,7 @@ class NodeConfig : public ConfigBase {
 /// Strips the "gflag." prefix and converts hyphens to underscores to derive
 /// the flag name. Uses SET_FLAG_IF_DEFAULT so command-line flags take
 /// precedence.
-void applyGFlags(const std::unordered_map<std::string, std::string>& configs);
+void applyGFlags(
+    const std::unordered_map<std::string, std::string>& configs) noexcept;
 
 } // namespace facebook::presto
