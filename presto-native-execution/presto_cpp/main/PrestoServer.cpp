@@ -82,6 +82,8 @@
 #include "velox/exec/TraceUtil.h"
 #include "velox/exec/rpc/RPCPlanNodeTranslator.h"
 #include "velox/expression/rpc/AsyncRPCFunctionRegistry.h"
+#include "velox/functions/Registerer.h"
+#include "velox/functions/prestosql/DateTimeCalendarFunctions.h"
 #include "velox/functions/prestosql/aggregates/RegisterAggregateFunctions.h"
 #include "velox/functions/prestosql/registration/RegistrationFunctions.h"
 #include "velox/functions/prestosql/window/WindowFunctionsRegistration.h"
@@ -1565,6 +1567,23 @@ void PrestoServer::registerCustomOperators() {
 void PrestoServer::registerFunctions() {
   velox::functions::prestosql::registerAllScalarFunctions(
       prestoBuiltinFunctionPrefix_);
+
+  // Velox no longer registers `at_timezone_convert`, but the coordinator
+  // still emits it for AT TIME ZONE expressions whose result is a TIMESTAMP.
+  // Restore it with Velox's timestamp-returning overloads, keeping the
+  // legacy `at_timezone` registration above unchanged.
+  velox::registerFunction<
+      velox::functions::AtTimezoneToTimestampFunction,
+      velox::Timestamp,
+      velox::TimestampWithTimezone,
+      velox::Varchar>(
+      {prestoBuiltinFunctionPrefix_ + "at_timezone_convert"}, {}, true);
+  velox::registerFunction<
+      velox::functions::AtTimezoneFromTimestampToTimestampFunction,
+      velox::Timestamp,
+      velox::Timestamp,
+      velox::Varchar>(
+      {prestoBuiltinFunctionPrefix_ + "at_timezone_convert"}, {}, true);
   velox::aggregate::prestosql::registerAllAggregateFunctions(
       prestoBuiltinFunctionPrefix_);
   velox::window::prestosql::registerAllWindowFunctions(

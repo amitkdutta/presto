@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 #include <gtest/gtest.h>
+#include <set>
 
 #include "presto_cpp/main/common/tests/test_json.h"
 #include "presto_cpp/main/functions/FunctionMetadata.h"
@@ -20,6 +21,7 @@
 #include "velox/expression/rpc/AsyncRPCFunctionRegistry.h"
 #include "velox/functions/Macros.h"
 #include "velox/functions/Registerer.h"
+#include "velox/functions/prestosql/DateTimeCalendarFunctions.h"
 #include "velox/functions/prestosql/aggregates/RegisterAggregateFunctions.h"
 #include "velox/functions/prestosql/registration/RegistrationFunctions.h"
 #include "velox/functions/prestosql/window/WindowFunctionsRegistration.h"
@@ -74,6 +76,22 @@ class FunctionMetadataTest : public ::testing::Test {
     aggregate::prestosql::registerAllAggregateFunctions(kPrestoDefaultPrefix);
     window::prestosql::registerAllWindowFunctions(kPrestoDefaultPrefix);
     functions::prestosql::registerAllScalarFunctions(kPrestoDefaultPrefix);
+
+    // Mirrors the `at_timezone_convert` restoration in
+    // PrestoServer::registerFunctions: Velox no longer registers it, so the
+    // server restores the timestamp-returning overloads.
+    facebook::velox::registerFunction<
+        facebook::velox::functions::AtTimezoneToTimestampFunction,
+        facebook::velox::Timestamp,
+        facebook::velox::TimestampWithTimezone,
+        facebook::velox::Varchar>(
+        {kPrestoDefaultPrefix + "at_timezone_convert"}, {}, true);
+    facebook::velox::registerFunction<
+        facebook::velox::functions::AtTimezoneFromTimestampToTimestampFunction,
+        facebook::velox::Timestamp,
+        facebook::velox::Timestamp,
+        facebook::velox::Varchar>(
+        {kPrestoDefaultPrefix + "at_timezone_convert"}, {}, true);
 
     // An RPC function lives outside the scalar registry, so its declaration
     // reaches the coordinator only through AsyncRPCFunctionRegistry. The two
@@ -232,6 +250,32 @@ TEST_F(FunctionMetadataTest, rpcFunction) {
 
 TEST_F(FunctionMetadataTest, mixedNullBehavior) {
   testFunction("test_mixed_null_behavior", "TestMixedNullBehavior.json", 2);
+}
+
+TEST_F(FunctionMetadataTest, atTimezoneConvert) {
+  ASSERT_TRUE(functionMetadata_.contains("at_timezone_convert"));
+  const json::array_t metadataList =
+      functionMetadata_.at("at_timezone_convert");
+  ASSERT_EQ(metadataList.size(), 2);
+
+  std::set<std::string> paramTypeSets;
+  for (const auto& signature : metadataList) {
+    EXPECT_EQ(signature["outputType"], "timestamp");
+    EXPECT_EQ(signature["functionKind"], "SCALAR");
+    EXPECT_EQ(
+        signature["routineCharacteristics"]["determinism"], "DETERMINISTIC");
+    std::string joined;
+    for (const auto& paramType : signature["paramTypes"]) {
+      if (!joined.empty()) {
+        joined += ",";
+      }
+      joined += paramType.get<std::string>();
+    }
+    paramTypeSets.insert(joined);
+  }
+  const std::set<std::string> expectedParamTypeSets{
+      "timestamp with time zone,varchar", "timestamp,varchar"};
+  EXPECT_EQ(paramTypeSets, expectedParamTypeSets);
 }
 
 TEST_F(FunctionMetadataTest, catalog) {
